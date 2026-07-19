@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>Emberkeep</title>
+    <meta name="description" content="Emberkeep — a cozy castle-building idle game." />
+    <meta name="theme-color" content="#2a1c10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <!-- Boot-screen styles are inlined so the loader works even if the CDN is
+         still warming the stylesheet or the game bundle. -->
+    <style>
+      #boot-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #2a1c10;
+        color: #f3e2c0;
+        font-family: system-ui, -apple-system, sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      #boot-screen .boot-emblem { font-size: 56px; line-height: 1; }
+      #boot-screen .boot-text { font-size: 17px; font-weight: 600; opacity: 0.9; }
+      #boot-screen .boot-dots { font-size: 15px; opacity: 0.6; letter-spacing: 3px; animation: bootPulse 1.2s ease-in-out infinite; }
+      @keyframes bootPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.85; } }
+      #boot-retry {
+        margin-top: 6px;
+        padding: 12px 22px;
+        font: inherit;
+        font-weight: 700;
+        color: #2a1c10;
+        background: linear-gradient(#f6cf7d, #e8a94b);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 3px 0 #b9812f;
+        cursor: pointer;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-CIVnYkIf.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C04f61KV.css">
+  </head>
+  <body>
+    <div id="app-frame">
+      <div id="game-root"></div>
+      <div id="ui-root"></div>
+    </div>
+
+    <!-- First-paint loader: never a blank screen, and it auto-recovers from a
+         cold-CDN hiccup (GitHub Pages can 503 a fresh large bundle once). -->
+    <div id="boot-screen">
+      <div class="boot-emblem">🏰</div>
+      <div class="boot-text">Loading Emberkeep</div>
+      <div class="boot-dots">● ● ●</div>
+      <button id="boot-retry" hidden>Tap to retry</button>
+    </div>
+    <script>
+      (function () {
+        var RETRY_KEY = 'ek-boot-retry';
+        var waited = 0;
+        var iv = setInterval(function () {
+          if (window.__game || document.querySelector('.title-screen')) {
+            clearInterval(iv);
+            var b = document.getElementById('boot-screen');
+            if (b && b.parentNode) b.parentNode.removeChild(b);
+            try { sessionStorage.removeItem(RETRY_KEY); } catch (e) {}
+            return;
+          }
+          waited += 250;
+          if (waited < 8000) return;
+          clearInterval(iv);
+          var tried = false;
+          try { tried = sessionStorage.getItem(RETRY_KEY) === '1'; } catch (e) {}
+          if (!tried) {
+            // One silent auto-retry — fixes the transient cold-CDN abort.
+            try { sessionStorage.setItem(RETRY_KEY, '1'); } catch (e) {}
+            location.reload();
+          } else {
+            // Still failing after a retry — offer a manual button, no loop.
+            var txt = document.querySelector('#boot-screen .boot-text');
+            var dots = document.querySelector('#boot-screen .boot-dots');
+            var btn = document.getElementById('boot-retry');
+            if (txt) txt.textContent = 'Having trouble loading';
+            if (dots) dots.style.display = 'none';
+            if (btn) {
+              btn.hidden = false;
+              btn.onclick = function () {
+                try { sessionStorage.removeItem(RETRY_KEY); } catch (e) {}
+                location.reload();
+              };
+            }
+          }
+        }, 250);
+      })();
+    </script>
+  </body>
+</html>
